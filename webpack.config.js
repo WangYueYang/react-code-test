@@ -4,7 +4,7 @@ const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.js',
+  entry: './src/index.jsx',
   devtool: 'source-map',
   devServer: {
     port: 8088,
