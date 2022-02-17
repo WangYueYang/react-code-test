@@ -7,4 +7,5 @@
  * @flow
  */
 
-throw new Error('This module must be shimmed by a specific build.');
+// throw new Error('This module must be shimmed by a specific build.');
+export * from './forks/SchedulerHostConfig.default'

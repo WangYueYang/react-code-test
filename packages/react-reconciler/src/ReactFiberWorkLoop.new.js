@@ -78,7 +78,8 @@ import {
 } from './SchedulingProfiler';
 
 // The scheduler is imported here *only* to detect whether it's been mocked
-import * as Scheduler from 'scheduler';
+// import * as Scheduler from 'scheduler';
+import * as Scheduler from 'scheduler/unstable_mock';
 
 import {__interactionsRef, __subscriberRef} from 'scheduler/tracing';
 
