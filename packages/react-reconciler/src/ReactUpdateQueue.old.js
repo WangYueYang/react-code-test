@@ -183,14 +183,14 @@ export function cloneUpdateQueue<State>(
 
 export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   const update: Update<*> = {
-    eventTime,
-    lane,
+    eventTime, // 任务时间，通过performance.now()获取的毫秒数。该字段在未来会重构
+    lane, // 优先级 车道
 
-    tag: UpdateState,
-    payload: null,
-    callback: null,
+    tag: UpdateState, // 更新的类型，包括UpdateState | ReplaceState | ForceUpdate | CaptureUpdate。
+    payload: null, // 更新挂载的数据，不同类型组件挂载的数据不同
+    callback: null, // 更新的回调函数
 
-    next: null,
+    next: null, // 与其他的 Update 形成链表
   };
   return update;
 }

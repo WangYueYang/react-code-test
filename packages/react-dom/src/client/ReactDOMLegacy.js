@@ -188,12 +188,16 @@ function legacyRenderSubtreeIntoContainer(
   // member of intersection type." Whyyyyyy.
   let root: RootType = (container._reactRootContainer: any);
   let fiberRoot;
+  // 首次渲染页面还没有挂载任何DOM，所以 root 是 null
   if (!root) {
     // Initial mount
+    // mount 阶段
+    // 创建了 FiberRootNode (root._internalRoot)
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
       forceHydrate,
     );
+    console.log(root._internalRoot, 'root')
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;
@@ -203,7 +207,9 @@ function legacyRenderSubtreeIntoContainer(
       };
     }
     // Initial mount should not be batched.
+    // unbatchedUpdates 不需要批处理
     unbatchedUpdates(() => {
+      // updateContainer(children: ReactElement, container: FIberRootNode) 
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
   } else {

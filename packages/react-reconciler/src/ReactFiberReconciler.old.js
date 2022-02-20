@@ -256,7 +256,9 @@ export function updateContainer(
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
+  // 这里的 container 就是 FiberRootNode, container.current 就是 current rootFiber (FiberNode)
   const current = container.current;
+  // 保存时间开始时间
   const eventTime = requestEventTime();
   if (__DEV__) {
     // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
@@ -265,12 +267,15 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
+
+  // 车道，和优先级有关
   const lane = requestUpdateLane(current);
 
+  // 优化的好像，先不管
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
-
+  // 获取当前上下文 
   const context = getContextForSubtree(parentComponent);
   if (container.context === null) {
     container.context = context;
@@ -294,7 +299,7 @@ export function updateContainer(
       );
     }
   }
-
+  // 创建一个 update 对象用于更新
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -313,8 +318,10 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-
+  // 把创建的 update 对象 添加到 current.shared 中， 赋值给 shared.pending
+  // 队列更新？
   enqueueUpdate(current, update);
+  // 处理Fiber schedule更新
   scheduleUpdateOnFiber(current, lane, eventTime);
 
   return lane;

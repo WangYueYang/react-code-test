@@ -530,6 +530,7 @@ export function scheduleUpdateOnFiber(
   }
 
   // Mark that the root has a pending update.
+  // 标记root有挂起的更新。
   markRootUpdated(root, lane, eventTime);
 
   if (root === workInProgressRoot) {
@@ -561,20 +562,26 @@ export function scheduleUpdateOnFiber(
   // TODO: requestUpdateLanePriority also reads the priority. Pass the
   // priority as an argument to that function and this one.
   const priorityLevel = getCurrentPriorityLevel();
-
+  // updateContainer 里的 lane === SyncLane
   if (lane === SyncLane) {
     if (
       // Check if we're inside unbatchedUpdates
+      // unbatchedUpdates 不需要批处理 
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
+      // 判断还没有渲染的话
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
       // Register pending interactions on the root to avoid losing traced interaction data.
+      // 在根目录上注册挂起的交互，以避免丢失跟踪的交互数据。
       schedulePendingInteractions(root, lane);
 
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
+      
+      // !react render 阶段开始
+      // https://react.iamkasong.com/process/reconciler.html#%E9%80%92-%E9%98%B6%E6%AE%B5
       performSyncWorkOnRoot(root);
     } else {
       ensureRootIsScheduled(root, eventTime);
@@ -1188,7 +1195,7 @@ export function discreteUpdates<A, B, C, D, R>(
     }
   }
 }
-
+// 简单记一下，这里通知不需要批处理
 export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   const prevExecutionContext = executionContext;
   executionContext &= ~BatchedContext;
@@ -1635,6 +1642,7 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
+  // React 16 中的 Reconciler 通过 shouldYield 判断当前浏览器更新是否有剩余时间
   while (workInProgress !== null && !shouldYield()) {
     performUnitOfWork(workInProgress);
   }
