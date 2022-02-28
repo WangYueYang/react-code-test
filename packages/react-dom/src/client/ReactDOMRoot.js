@@ -131,13 +131,18 @@ function createRootImpl(
       options.hydrationOptions != null &&
       options.hydrationOptions.mutableSources) ||
     null;
+  // 创建 FiberRootNode 和 rootFiber
+  // FiberRootNode.current = rootFiber
+  // rootFiber.stateNode = FiberRootNode
   const root = createContainer(container, tag, hydrate, hydrationCallbacks);
+  // 给 container 添加一个内部属性 __reactContainere$+随机key 用于指向此 FiberNode 节点。
   markContainerAsRoot(root.current, container);
   const containerNodeType = container.nodeType;
 
   if (enableEagerRootListeners) {
     const rootContainerElement =
       container.nodeType === COMMENT_NODE ? container.parentNode : container;
+    // ! React 事件处理
     listenToAllSupportedEvents(rootContainerElement);
   } else {
     if (hydrate && tag !== LegacyRoot) {

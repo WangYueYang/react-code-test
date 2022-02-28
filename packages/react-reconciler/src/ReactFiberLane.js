@@ -648,6 +648,7 @@ export function markRootUpdated(
   updateLane: Lane,
   eventTime: number,
 ) {
+  // 和 updateLane 做按位或操作
   root.pendingLanes |= updateLane;
 
   // TODO: Theoretically, any update to any lane can unblock any other lane. But

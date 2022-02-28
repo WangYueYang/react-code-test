@@ -520,9 +520,11 @@ export function scheduleUpdateOnFiber(
   lane: Lane,
   eventTime: number,
 ) {
+  // 两个报错提醒，先不管
   checkForNestedUpdates();
   warnAboutRenderPhaseUpdatesInDEV(fiber);
 
+  // 第一次渲染，fiber.tag == 3时， 返回的是 FiberRootNode
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -533,6 +535,7 @@ export function scheduleUpdateOnFiber(
   // 标记root有挂起的更新。
   markRootUpdated(root, lane, eventTime);
 
+  // 第一次渲染的时候 workInProgressRoot 是 null 所以不进来
   if (root === workInProgressRoot) {
     // Received an update to a tree that's in the middle of rendering. Mark
     // that there was an interleaved update work on this root. Unless the
@@ -561,6 +564,7 @@ export function scheduleUpdateOnFiber(
 
   // TODO: requestUpdateLanePriority also reads the priority. Pass the
   // priority as an argument to that function and this one.
+  // 优先级相关，  priorityLevel 代表某一种优先级
   const priorityLevel = getCurrentPriorityLevel();
   // updateContainer 里的 lane === SyncLane
   if (lane === SyncLane) {
@@ -574,6 +578,7 @@ export function scheduleUpdateOnFiber(
     ) {
       // Register pending interactions on the root to avoid losing traced interaction data.
       // 在根目录上注册挂起的交互，以避免丢失跟踪的交互数据。
+      // 第一次渲染的时候先不管
       schedulePendingInteractions(root, lane);
 
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
@@ -975,11 +980,14 @@ function performSyncWorkOnRoot(root) {
     (executionContext & (RenderContext | CommitContext)) === NoContext,
     'Should not already be working.',
   );
-
+  // https://react.iamkasong.com/hooks/useeffect.html
+  // flushPassiveEffects内部会设置优先级，并执行flushPassiveEffectsImp
+  // 和 useEffect 相关，先略过
   flushPassiveEffects();
 
   let lanes;
   let exitStatus;
+
   if (
     root === workInProgressRoot &&
     includesSomeLane(root.expiredLanes, workInProgressRootRenderLanes)
@@ -1006,6 +1014,8 @@ function performSyncWorkOnRoot(root) {
       exitStatus = renderRootSync(root, lanes);
     }
   } else {
+    // 第一次 render 进这里
+    // 设置优先级相关
     lanes = getNextLanes(root, NoLanes);
     exitStatus = renderRootSync(root, lanes);
   }
@@ -1040,9 +1050,12 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
+  // rootFiber.alternate 生成新的 fiber 树
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
+
+  // ! React commit 阶段
   commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
@@ -1886,7 +1899,10 @@ function resetChildLanes(completedWork: Fiber) {
 }
 
 function commitRoot(root) {
+
+  // 优先级相关
   const renderPriorityLevel = getCurrentPriorityLevel();
+  //  const ImmediatePriority: ReactPriorityLevel = 99;
   runWithPriority(
     ImmediateSchedulerPriority,
     commitRootImpl.bind(null, root, renderPriorityLevel),

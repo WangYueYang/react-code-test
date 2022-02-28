@@ -35,15 +35,16 @@ module.exports = {
         './packages/react-reconciler'
       ),
     },
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.css']
   },
-  plugins:[
+  plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src/index.html'),
     }),
     new webpack.DefinePlugin({
       __DEV__: true,
       __PROFILE__: true,
-      __EXPERIMENTAL__: true
-    })
-  ]
+      __EXPERIMENTAL__: true,
+    }),
+  ],
 };

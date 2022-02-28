@@ -276,8 +276,10 @@ export function updateContainer(
     markRenderScheduled(lane);
   }
   // 获取当前上下文 
+  // 第一次渲染时， parentComponent 是null，getContextForSubtree 里直接返回 {}
   const context = getContextForSubtree(parentComponent);
   if (container.context === null) {
+    // 把当前上下文赋值给 FiberRootNode.context
     container.context = context;
   } else {
     container.pendingContext = context;
@@ -303,6 +305,7 @@ export function updateContainer(
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
+  // element 就是 jsx 对象
   update.payload = {element};
 
   callback = callback === undefined ? null : callback;

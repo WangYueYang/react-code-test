@@ -26,6 +26,7 @@ import {unstable_getThreadID} from 'scheduler/tracing';
 import {initializeUpdateQueue} from './ReactUpdateQueue.old';
 import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 
+// FiberRootNode 唯一的 Fiber 跟节点
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
   this.containerInfo = containerInfo;
@@ -93,10 +94,13 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+  // 这里创建 rootFiber， FiberRootNode.current 指向这里创建的 rootFiber
+  // rootFiber.stateNode 指向唯一的 FiberRootNode
+  // 这里的 rootFiber 就是我们的 Fiber 树了
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
-
+  // 更新相关，给 rootFiber 添加 updateQueue
   initializeUpdateQueue(uninitializedFiber);
 
   return root;

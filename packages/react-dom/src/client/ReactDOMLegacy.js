@@ -197,7 +197,9 @@ function legacyRenderSubtreeIntoContainer(
       container,
       forceHydrate,
     );
-    console.log(root._internalRoot, 'root')
+    console.log(root._internalRoot, 'root22')
+    // fiberRoot = FiberRootNode,
+    // 因为 legacyCreateRootFromDOMContainer 返回的是 ReactDOMBlockingRoot 对象，他的 this._internalRoot 是创建好的 FiberRootNode
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;

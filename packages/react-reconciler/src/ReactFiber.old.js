@@ -113,6 +113,7 @@ if (__DEV__) {
 
 let debugCounter = 1;
 
+// rootFiber 的 fiberNode
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
@@ -435,6 +436,8 @@ export function createHostRootFiber(tag: RootTag): Fiber {
   } else if (tag === BlockingRoot) {
     mode = BlockingMode | StrictMode;
   } else {
+    // 这里的 NoMode 应该是一个代表优先级的二进制车道？？？
+    // const NoMode = 0b00000
     mode = NoMode;
   }
 
@@ -444,7 +447,7 @@ export function createHostRootFiber(tag: RootTag): Fiber {
     // Without some nodes in the tree having empty base times.
     mode |= ProfileMode;
   }
-
+  // HostRoot = 3 代表根节点，可以嵌套在另一个节点里
   return createFiber(HostRoot, null, null, mode);
 }
 
