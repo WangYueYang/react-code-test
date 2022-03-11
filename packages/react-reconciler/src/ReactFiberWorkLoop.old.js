@@ -567,6 +567,8 @@ export function scheduleUpdateOnFiber(
   // 优先级相关，  priorityLevel 代表某一种优先级
   const priorityLevel = getCurrentPriorityLevel();
   // updateContainer 里的 lane === SyncLane
+  // 判断是否是同步任务
+  // 根据优先级区分同步任务和异步任务，同步任务立即执行，异步任务走 scheduler
   if (lane === SyncLane) {
     if (
       // Check if we're inside unbatchedUpdates
@@ -585,7 +587,7 @@ export function scheduleUpdateOnFiber(
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
       
-      // !react render 阶段开始
+      // !react render + commit 阶段总入口
       // https://react.iamkasong.com/process/reconciler.html#%E9%80%92-%E9%98%B6%E6%AE%B5
       performSyncWorkOnRoot(root);
     } else {
@@ -1516,6 +1518,9 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
+    // createWorkInProgress
+    // 创建 fiber 赋值给 workInProgress， 把 current 上的属性也赋值给 workInProgress
+    // workInProgress.alternate = current; current.alternate = workInProgress; 通过 alternate 把 workInProgress 和 current 相互关联起来
     prepareFreshStack(root, lanes);
     startWorkOnPendingInteractions(root, lanes);
   }
@@ -1661,6 +1666,7 @@ function workLoopConcurrent() {
   }
 }
 
+// unitOfWork == workInProgress
 function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
@@ -3151,6 +3157,7 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
 
     // Before entering the begin phase, copy the work-in-progress onto a dummy
     // fiber. If beginWork throws, we'll use this to reset the state.
+    // 创建 fiber 赋值给 dummyFiber, 把 workInProgress 上的值赋给 dummyFiber
     const originalWorkInProgressCopy = assignFiberPropertiesInDEV(
       dummyFiber,
       unitOfWork,
