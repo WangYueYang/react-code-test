@@ -648,12 +648,13 @@ function constructClassInstance(
       }
     }
   }
-
+  // ctor 就是我们的 classComponent (App) new App
   const instance = new ctor(props, context);
   const state = (workInProgress.memoizedState =
     instance.state !== null && instance.state !== undefined
       ? instance.state
       : null);
+  // App 实例上加了更新state 的一些东西？
   adoptClassInstance(workInProgress, instance);
 
   if (__DEV__) {
@@ -819,6 +820,7 @@ function mountClassInstance(
   instance.state = workInProgress.memoizedState;
   instance.refs = emptyRefsObject;
 
+  // 在传入的 workInProgress 上创建 queue 对象赋值给 workInProgress.updateQueue 
   initializeUpdateQueue(workInProgress);
 
   const contextType = ctor.contextType;
@@ -859,11 +861,13 @@ function mountClassInstance(
       );
     }
   }
-
+  // ! 处理更新相关？记个重点
   processUpdateQueue(workInProgress, newProps, instance, renderLanes);
   instance.state = workInProgress.memoizedState;
 
+  // react getDerivedStateFromProps 生命周期
   const getDerivedStateFromProps = ctor.getDerivedStateFromProps;
+  // 如果有的话执行这个声明周期，并把 state 加到 updateQueue.baseState 里准备做更新
   if (typeof getDerivedStateFromProps === 'function') {
     applyDerivedStateFromProps(
       workInProgress,
@@ -882,6 +886,7 @@ function mountClassInstance(
     (typeof instance.UNSAFE_componentWillMount === 'function' ||
       typeof instance.componentWillMount === 'function')
   ) {
+    // 执行 componentWillMount 生命周期
     callComponentWillMount(workInProgress, instance);
     // If we had additional state updates during this life-cycle, let's
     // process them now.

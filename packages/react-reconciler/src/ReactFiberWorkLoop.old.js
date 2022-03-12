@@ -1671,6 +1671,9 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
+
+  // 第一次进来的时候是 updateHostRoot 创建整个应用的根节点，在 renderRootSync 里的 prepareFreshStack 函数里执行 workInProgress.alternate = current; current.alternate = workInProgress;
+  // 第二次进来的时候创建 <App/> 组件，这次的 unitOfWork = workInProgress.children 而他的 alternate 是 null
   const current = unitOfWork.alternate;
   setCurrentDebugFiberInDEV(unitOfWork);
 
@@ -1680,6 +1683,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
+    // next = workInProgress.child
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
   }
 
@@ -1689,6 +1693,8 @@ function performUnitOfWork(unitOfWork: Fiber): void {
     // If this doesn't spawn new work, complete the current work.
     completeUnitOfWork(unitOfWork);
   } else {
+    // workInProgress = workInProgress.child 
+    // workLoopSync 里循环的时候会判断 workLoopSync !== null 知道这里的 next = null  workLoopSync 才会跳出循环
     workInProgress = next;
   }
 
@@ -3163,6 +3169,7 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
       unitOfWork,
     );
     try {
+      // 执行 ReactFiberBeginWork.old.js 里的 beginWork
       return originalBeginWork(current, unitOfWork, lanes);
     } catch (originalError) {
       if (

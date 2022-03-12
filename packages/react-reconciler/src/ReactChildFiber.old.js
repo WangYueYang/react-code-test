@@ -798,6 +798,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       let knownKeys = null;
       for (let i = 0; i < newChildren.length; i++) {
         const child = newChildren[i];
+        // 判断 child 上的 key
         knownKeys = warnOnInvalidKey(child, knownKeys, returnFiber);
       }
     }
@@ -809,6 +810,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    // ! 这里做 Diff ？
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -859,16 +861,19 @@ function ChildReconciler(shouldTrackSideEffects) {
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
-
+    // 第一次创建的时候
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
       for (; newIdx < newChildren.length; newIdx++) {
+        // 根据 newChildren[newIdx] 上的属性创建 fiberNode
         const newFiber = createChild(returnFiber, newChildren[newIdx], lanes);
         if (newFiber === null) {
           continue;
         }
         lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        // 把 newChildren[0] 赋值给 resultingFirstChild，把剩下的赋值给 newFiber.sibling 
+        // resultingFirstChild 是第一个 newFiber, 剩余的都是 resultingFirstChild.sibling 
         if (previousNewFiber === null) {
           // TODO: Move out of the loop. This only happens for the first run.
           resultingFirstChild = newFiber;
@@ -1140,6 +1145,8 @@ function ChildReconciler(shouldTrackSideEffects) {
   ): Fiber {
     const key = element.key;
     let child = currentFirstChild;
+
+    // 第一次渲染 HostRoot 的时候 child = null
     while (child !== null) {
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
@@ -1225,8 +1232,13 @@ function ChildReconciler(shouldTrackSideEffects) {
       created.return = returnFiber;
       return created;
     } else {
+      // 第一次渲染，创建 HostRoot 的时候走这里
+      // 创建不同 tag 的 fiberNode 
       const created = createFiberFromElement(element, returnFiber.mode, lanes);
+      // 有 Ref 的话在里面做一些赋值操作
       created.ref = coerceRef(returnFiber, currentFirstChild, element);
+      // 连接父级 fiber
+      // 第一次 beginWork 的时候 returnFiber 是 rootFiber
       created.return = returnFiber;
       return created;
     }
@@ -1331,7 +1343,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           }
       }
     }
-
+    
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(
@@ -1343,6 +1355,8 @@ function ChildReconciler(shouldTrackSideEffects) {
       );
     }
 
+    // props.children 是一个数组的时候进到这里来
+    // <div><div>1</div><p>2</p></div> 比如这种情况
     if (isArray(newChild)) {
       return reconcileChildrenArray(
         returnFiber,

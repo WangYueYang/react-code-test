@@ -231,6 +231,7 @@ if (__DEV__) {
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
 
+// 不论走哪个逻辑，最终他会生成新的子Fiber节点并赋值给workInProgress.child，作为本次beginWork返回值 (opens new window)，并作为下次performUnitOfWork执行时workInProgress的传参 (opens new window)。
 export function reconcileChildren(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -242,6 +243,8 @@ export function reconcileChildren(
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
     // we can optimize this reconciliation pass by not tracking side-effects.
+
+    // 对于mount的组件，他会创建新的子Fiber节点
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
@@ -900,6 +903,7 @@ function updateClassComponent(
       workInProgress.flags |= Placement;
     }
     // In the initial pass we might need to construct the instance.
+    // 执行 class 组件的 constructor，开始构造实例, 在里面 new Component()
     constructClassInstance(workInProgress, Component, nextProps);
     mountClassInstance(workInProgress, Component, nextProps, renderLanes);
     shouldUpdate = true;
@@ -988,6 +992,8 @@ function finishClassComponent(
   } else {
     if (__DEV__) {
       setIsRendering(true);
+      // ? 执行render函数
+      console.log(instance.render())
       nextChildren = instance.render();
       if (
         debugRenderPhaseSideEffectsForStrictMode &&
@@ -1020,6 +1026,7 @@ function finishClassComponent(
       renderLanes,
     );
   } else {
+    // 渲染 App 时上面已经执行了 render 函数, 这个时候的 nextChildren 是 app.render返回的 jsx
     reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   }
 
@@ -1062,16 +1069,23 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   const nextProps = workInProgress.pendingProps;
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState !== null ? prevState.element : null;
+
+  // workInProgress.updateQueue = current.updateQueue
   cloneUpdateQueue(current, workInProgress);
+  // react 更新 state 相关？ 处理更新队列 (setState的异步处理核心)
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
+  // 通过 processUpdateQueue 处理后，第一次渲染的时候 workInProgress.memoizedState.element = jsx 
   const nextState = workInProgress.memoizedState;
   // Caution: React DevTools currently depends on this property
   // being called "element".
+  // nextChildren = jsx
   const nextChildren = nextState.element;
   if (nextChildren === prevChildren) {
     resetHydrationState();
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
+
+  // FiberRootNode
   const root: FiberRoot = workInProgress.stateNode;
   if (root.hydrate && enterHydrationState(workInProgress)) {
     // If we don't have any current children this might be the first pass.
@@ -1092,7 +1106,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
-
+    // 根据 workInProgress 创建 child fiber
     const child = mountChildFibers(
       workInProgress,
       null,
@@ -1115,6 +1129,9 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   } else {
     // Otherwise reset hydration state in case we aborted and resumed another
     // root.
+
+    // 里面判断 current ===null ？mountChildFibers ：reconcileChildFibers
+    // 创建 fiberNode
     reconcileChildren(current, workInProgress, nextChildren, renderLanes);
     resetHydrationState();
   }
@@ -1129,6 +1146,7 @@ function updateHostComponent(
   pushHostContext(workInProgress);
 
   if (current === null) {
+    // tryToClaimNextHydratableInstance是进行hydrate的操作，也就是复用原本存在的root的内部的DOM节点
     tryToClaimNextHydratableInstance(workInProgress);
   }
 
@@ -1136,7 +1154,9 @@ function updateHostComponent(
   const nextProps = workInProgress.pendingProps;
   const prevProps = current !== null ? current.memoizedProps : null;
 
+  // 拿到 Jsx 的 props.children 
   let nextChildren = nextProps.children;
+  // 判断是不是纯文本
   const isDirectTextChild = shouldSetTextContent(type, nextProps);
 
   if (isDirectTextChild) {
@@ -1152,6 +1172,7 @@ function updateHostComponent(
   }
 
   markRef(current, workInProgress);
+  // 创建子Fiber
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   return workInProgress.child;
 }
@@ -3352,6 +3373,7 @@ function beginWork(
         renderLanes,
       );
     }
+    // 第二次进来的时候创建 <App/> 的fiber，App 是classComponent
     case ClassComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3367,8 +3389,10 @@ function beginWork(
         renderLanes,
       );
     }
+    // workInProgress.tag == 3 创建 ReactDOM.render出的根节点
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
+    // tat == 5 创建 原生HTML标签
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
     case HostText:
