@@ -698,6 +698,7 @@ function completeWork(
     }
     case HostComponent: {
       popHostContext(workInProgress);
+      // 获取到 React 应用的根容器 <div id="app"></div>
       const rootContainerInstance = getRootHostContainer();
       const type = workInProgress.type;
       if (current !== null && workInProgress.stateNode != null) {

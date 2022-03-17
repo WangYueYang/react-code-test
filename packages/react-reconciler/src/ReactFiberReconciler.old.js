@@ -275,7 +275,7 @@ export function updateContainer(
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
-  // 获取当前上下文 
+  // react.context ? 
   // 第一次渲染时， parentComponent 是null，getContextForSubtree 里直接返回 {}
   const context = getContextForSubtree(parentComponent);
   if (container.context === null) {
@@ -321,10 +321,14 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-  // 把创建的 update 对象 添加到 current.shared 中， 赋值给 shared.pending
-  // 队列更新？
+  
+  // 创建链表
+  // const padding = current.updateQueue.shared.padding
+  // 让创建的 update.next = padding.next padding.next = update 
+  // 如果没有的话就和自己形成环状链表
+  // sharedQueue.pending = update
   enqueueUpdate(current, update);
-  // 处理Fiber schedule更新
+  // 通过判断 React 是同步异步操作执行 performSyncWorkOnRoot 
   scheduleUpdateOnFiber(current, lane, eventTime);
 
   return lane;

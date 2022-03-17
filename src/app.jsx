@@ -22,7 +22,9 @@ class App extends React.Component {
     return (
       <div className="app-root">
         <div>React Class Component</div>
-        <p>hahah</p>
+        <p>
+          <span>hahah</span>
+        </p>
       </div>
     );
   }

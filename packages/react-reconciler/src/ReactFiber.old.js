@@ -260,6 +260,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
     // node that we're free to reuse. This is lazily created to avoid allocating
     // extra objects for things that are never updated. It also allow us to
     // reclaim the extra memory if needed.
+    // 创建 workInProgress Fiber
     workInProgress = createFiber(
       current.tag,
       pendingProps,
@@ -277,7 +278,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
       workInProgress._debugOwner = current._debugOwner;
       workInProgress._debugHookTypes = current._debugHookTypes;
     }
-
+    // 通过 alternate 属性吧 workInProgress 和 rootFiber 互相关联
     workInProgress.alternate = current;
     current.alternate = workInProgress;
   } else {

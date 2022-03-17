@@ -1136,7 +1136,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     created.return = returnFiber;
     return created;
   }
-
+  // 在这判断 currentFirstChild 然后循环做 Diff 
   function reconcileSingleElement(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -1234,6 +1234,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     } else {
       // 第一次渲染，创建 HostRoot 的时候走这里
       // 创建不同 tag 的 fiberNode 
+      // 根据 element 属性创建子 Fiber
       const created = createFiberFromElement(element, returnFiber.mode, lanes);
       // 有 Ref 的话在里面做一些赋值操作
       created.ref = coerceRef(returnFiber, currentFirstChild, element);
@@ -1343,7 +1344,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           }
       }
     }
-    
+
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(

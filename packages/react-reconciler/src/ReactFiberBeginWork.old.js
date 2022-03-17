@@ -258,6 +258,7 @@ export function reconcileChildren(
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
+    // 对于update组件会判断 current.child !== null 来做 Diff 或者直接创建子 Fiber
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -3373,7 +3374,7 @@ function beginWork(
         renderLanes,
       );
     }
-    // 第二次进来的时候创建 <App/> 的fiber，App 是classComponent
+    // 第二次进来的时候，App 是classComponent,此时的 workInProgress是 App 的 FiberNode
     case ClassComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
