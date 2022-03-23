@@ -408,6 +408,8 @@ export function createElement(
 
   // We create tags in the namespace of their parent container, except HTML
   // tags get no namespace.
+  // 返回的是 return 判断 rootContainerElement === DOCUMENT_NODE, 返回 document或者是 Node.ownerDocument 这里返回的是 rootContainerElement.ownerDocument 
+  // 所以这里得到的是 当前 rootContainerElement 节点的顶层的 document 对象
   const ownerDocument: Document = getOwnerDocumentFromRootContainer(
     rootContainerElement,
   );

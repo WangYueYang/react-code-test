@@ -1052,7 +1052,8 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // rootFiber.alternate 生成新的 fiber 树
+  // finishedWork = render 阶段生成的 workInProgress tree
+  // root.current = HostRoot 的 current Fiber 
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
@@ -1930,6 +1931,8 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
+
+    // 触发useEffect回调与其他同步任务。由于这些任务可能触发新的渲染，所以这里要一直遍历执行直到没有任务
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -1976,6 +1979,7 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   // commitRoot never returns a continuation; it always finishes synchronously.
   // So we can clear these now to allow a new callback to be scheduled.
+  // 重置Scheduler绑定的回调函数
   root.callbackNode = null;
 
   // Update the first and last pending times on this root. The new first
@@ -2294,6 +2298,7 @@ function commitBeforeMutationEffects() {
   while (nextEffect !== null) {
     const current = nextEffect.alternate;
 
+    // ...focus blur相关
     if (!shouldFireAfterActiveInstanceBlur && focusedInstanceHandle !== null) {
       if ((nextEffect.flags & Deletion) !== NoFlags) {
         if (doesFiberContain(nextEffect, focusedInstanceHandle)) {
@@ -2316,11 +2321,13 @@ function commitBeforeMutationEffects() {
     const flags = nextEffect.flags;
     if ((flags & Snapshot) !== NoFlags) {
       setCurrentDebugFiberInDEV(nextEffect);
-
+      // 调用getSnapshotBeforeUpdate
       commitBeforeMutationEffectOnFiber(current, nextEffect);
 
       resetCurrentDebugFiberInDEV();
     }
+
+    // 调度useEffect
     if ((flags & Passive) !== NoFlags) {
       // If there are passive effects, schedule a callback to flush at
       // the earliest opportunity.
@@ -2438,6 +2445,7 @@ function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
 
     if (flags & (Update | Callback)) {
       const current = nextEffect.alternate;
+      //  执行生命周期钩子和 hook
       commitLayoutEffectOnFiber(root, current, nextEffect, committedLanes);
     }
 

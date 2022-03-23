@@ -270,6 +270,7 @@ export function createInstance(
   if (__DEV__) {
     // TODO: take namespace into account when validating.
     const hostContextDev = ((hostContext: any): HostContextDev);
+    // 用于校验父子节点设置及同名节点嵌套结构设定是否有误
     validateDOMNesting(type, null, hostContextDev.ancestorInfo);
     if (
       typeof props.children === 'string' ||
@@ -292,7 +293,9 @@ export function createInstance(
     rootContainerInstance,
     parentNamespace,
   );
+  // 设置fiber 和node 的关系
   precacheFiberNode(internalInstanceHandle, domElement);
+  // 设置ndoe 和props的关系
   updateFiberProps(domElement, props);
   return domElement;
 }

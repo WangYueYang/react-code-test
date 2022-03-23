@@ -3393,7 +3393,7 @@ function beginWork(
     // workInProgress.tag == 3 创建 ReactDOM.render出的根节点
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
-    // tat == 5 创建 原生HTML标签
+    // tag == 5 创建 原生HTML标签
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
     case HostText:

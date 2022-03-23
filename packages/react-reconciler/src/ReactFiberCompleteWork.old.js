@@ -669,9 +669,11 @@ function completeWork(
       return null;
     }
     case HostRoot: {
+      // 复制 当前 workInProgress 给 current ？
       popHostContainer(workInProgress);
       popTopLevelLegacyContextObject(workInProgress);
       resetMutableSourceWorkInProgressVersions();
+      // fiberRoot = div#app
       const fiberRoot = (workInProgress.stateNode: FiberRoot);
       if (fiberRoot.pendingContext) {
         fiberRoot.context = fiberRoot.pendingContext;
@@ -753,8 +755,10 @@ function completeWork(
             workInProgress,
           );
 
+          // 将子孙DOM节点插入刚生成的DOM节点中
           appendAllChildren(instance, workInProgress, false, false);
 
+          // DOM节点赋值给对应的fiber.stateNode
           workInProgress.stateNode = instance;
 
           // Certain renderers require commit-time effects for initial mount.
