@@ -905,6 +905,7 @@ function updateClassComponent(
     }
     // In the initial pass we might need to construct the instance.
     // 执行 class 组件的 constructor，开始构造实例, 在里面 new Component()
+    // 把 new App() 的结果赋值给 当前 workInProgress.Fiber App 对应的 fiber 
     constructClassInstance(workInProgress, Component, nextProps);
     mountClassInstance(workInProgress, Component, nextProps, renderLanes);
     shouldUpdate = true;
@@ -1072,14 +1073,17 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   const prevChildren = prevState !== null ? prevState.element : null;
 
   // workInProgress.updateQueue = current.updateQueue
+  // 开辟一块新的地址给 workInProgress.updateQueue，因为之前的 workInProgress 和 current 指向的地址是一样的
   cloneUpdateQueue(current, workInProgress);
   // react 更新 state 相关？ 处理更新队列 (setState的异步处理核心)
+  // 设置 state 的关键地方，把 updateQueue 上的数据添加到 workInProgress.memoizedState 和 workInProgress.updateQueue.baseState 上 
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
-  // 通过 processUpdateQueue 处理后，第一次渲染的时候 workInProgress.memoizedState.element = jsx 
+  // 获取到的 state 
   const nextState = workInProgress.memoizedState;
   // Caution: React DevTools currently depends on this property
   // being called "element".
   // nextChildren = jsx
+  // 通过 processUpdateQueue 处理后，第一次渲染的时候 workInProgress.memoizedState.element = jsx 
   const nextChildren = nextState.element;
   if (nextChildren === prevChildren) {
     resetHydrationState();
@@ -1107,7 +1111,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
-    // 根据 workInProgress 创建 child fiber
     const child = mountChildFibers(
       workInProgress,
       null,

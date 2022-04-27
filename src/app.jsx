@@ -17,17 +17,35 @@ import * as React from 'react';
 //   );
 // };
 
+
+
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      num: 0,
+    };
+  }
+  // componentDidMount() {
+  //   this.setState({
+  //     num: ++this.state.num
+  //   }) 
+  // }
+  componentDidUpdate(a,b) {
+    console.log(a,b,'haha',this.state.num)
+  }
+  handleClick() {
+    this.setState({
+      num: 3
+    })
+  }
+
   render() {
     return (
-      <div className="app-root">
-        <div>React Class Component</div>
-        <p>
-          <span>hahah</span>
-        </p>
+      <div className="app-root" onClick={this.handleClick.bind(this)}>
+        Number {this.state.num}
       </div>
     );
   }
 }
-
 export default App;

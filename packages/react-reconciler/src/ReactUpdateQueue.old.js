@@ -204,6 +204,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
 
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
   const pending = sharedQueue.pending;
+  // 如果 pending == null 的话 让自己的 update 和自己形成环状链表
   if (pending === null) {
     // This is the first update. Create a circular list.
     update.next = update;
@@ -211,6 +212,7 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     update.next = pending.next;
     pending.next = update;
   }
+  // 把 update 复制到 sharedQueue.pending 上
   sharedQueue.pending = update;
 
   if (__DEV__) {
@@ -418,13 +420,16 @@ export function processUpdateQueue<State>(
     // and last so that it's non-circular.
     const lastPendingUpdate = pendingQueue;
     const firstPendingUpdate = lastPendingUpdate.next;
+    // 把 update 的环状链表剪开
     lastPendingUpdate.next = null;
     // Append pending updates to base queue
+    // 将 pendingQueue 添加到 baseUpdate 链表的尾部
     if (lastBaseUpdate === null) {
       firstBaseUpdate = firstPendingUpdate;
     } else {
       lastBaseUpdate.next = firstPendingUpdate;
     }
+    // lastBaseUpdate 直接指向 baseUpdate 链表的最尾部
     lastBaseUpdate = lastPendingUpdate;
 
     // If there's a current queue, and it's different from the base queue, then
@@ -432,6 +437,8 @@ export function processUpdateQueue<State>(
     // queue is a singly-linked list with no cycles, we can append to both
     // lists and take advantage of structural sharing.
     // TODO: Pass `current` as argument
+
+    // 这里同样的也是吧 pendingQueue 添加到 current 的updateQueue 的尾部
     const current = workInProgress.alternate;
     if (current !== null) {
       // This is always non-null on a ClassComponent or HostRoot

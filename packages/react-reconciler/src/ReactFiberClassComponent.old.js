@@ -196,7 +196,7 @@ const classComponentUpdater = {
     const fiber = getInstance(inst);
     const eventTime = requestEventTime();
     const lane = requestUpdateLane(fiber);
-
+    console.log(fiber, 'fivber')
     const update = createUpdate(eventTime, lane);
     update.payload = payload;
     if (callback !== undefined && callback !== null) {
@@ -649,7 +649,9 @@ function constructClassInstance(
     }
   }
   // ctor 就是我们的 classComponent (App) new App
+  // 当 new App 的时候 constructor 就会执行，this.state 这种也就会挂载上去
   const instance = new ctor(props, context);
+  // new ctor 完，如果 class component 有 state 就用 instance.state 没有就是 null
   const state = (workInProgress.memoizedState =
     instance.state !== null && instance.state !== undefined
       ? instance.state
@@ -821,6 +823,7 @@ function mountClassInstance(
   instance.refs = emptyRefsObject;
 
   // 在传入的 workInProgress 上创建 queue 对象赋值给 workInProgress.updateQueue 
+  // workInProgress.updateQueue.baseState = workInProgress.memoizedState
   initializeUpdateQueue(workInProgress);
 
   const contextType = ctor.contextType;
