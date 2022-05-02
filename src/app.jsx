@@ -26,14 +26,7 @@ class App extends React.Component {
       num: 0,
     };
   }
-  // componentDidMount() {
-  //   this.setState({
-  //     num: ++this.state.num
-  //   }) 
-  // }
-  componentDidUpdate(a,b) {
-    console.log(a,b,'haha',this.state.num)
-  }
+
   handleClick() {
     this.setState({
       num: 3
