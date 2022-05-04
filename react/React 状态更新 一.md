@@ -129,7 +129,6 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   if (pending === null) {
     update.next = update;
   } else {
-    // 把pending.next 加入到链表尾部
     update.next = pending.next;
     pending.next = update;
   }
