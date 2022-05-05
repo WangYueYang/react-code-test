@@ -201,7 +201,7 @@ let baseQueue = current.baseQueue;
 
 关于 pendingQueue 和 baseQueue 的操作：
 
-之前在 dispatchAction 里会创建一个 update 的对象，接着会讲这个 update 插入到 queue.pending 中，当 pending == null 时他自己会和自己形成一条环状链表
+之前在 dispatchAction 里会创建一个 update 的对象，接着会将这个 update 插入到 queue.pending 中，当 pending == null 时他自己会和自己形成一条环状链表
 
 ```js
 queue.pending:   u1 ─────┐ 
@@ -223,9 +223,9 @@ queue.pending:   u2 ──> u1
 在 updateReducer 里当 baseQueue == null 时，baseQueue 会直接等于 queue.pending
 
 ```js
-current.baseQueue: u2 ——> u1
-										^      |
-  									└──────┘
+current.baseQueue:   u2 ——> u1
+									  	^      |
+  								 	  └──────┘
 queue.pending = null
 ```
 
