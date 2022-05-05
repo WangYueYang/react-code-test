@@ -38,7 +38,7 @@ const update: Update<S, A> = {
 };
 ```
 
-接着声明一个 pending 等于 queue.pending , 当 pending 为 null 时， update 和自己形成一条单向环状链表，不为 null 的话，就将声明的 update 插入到 queue.pending 的这条环状链表里，并且让 queue.pending 指向最后一个插入对 update。（这里做的事情和 enqueueUpdate() 是一样的）
+接着声明一个 pending 等于 queue.pending , 当 pending 为 null 时， update 和自己形成一条单向环状链表，不为 null 的话，就将声明的 update 插入到 queue.pending 的这条环状链表尾部，并且让 queue.pending 指向最后一个插入对 update。（这里做的事情和 enqueueUpdate() 是一样的）
 
 ```js
 const pending = queue.pending;
@@ -292,7 +292,15 @@ if (baseQueue !== null) {
 
 这样 function component 里拿到的就是更新后的 Hook 了。hook 改变后，返回了新的 react element，再往后就是 react 的 render 阶段和 commit 阶段了，最后在 commit 阶段里完成页面的更新. 
 
+## 总结一下
 
+1. 调用 dispatchAction 函数，创建 update 对象并存储更新后的值，
+2. 把 update 对象插入到当前 hook 的 queue.peding 链表里，把新的 hook 的值和更新函数也存储在 update 对象上
+3. 执行 scheduleUpdateOnFiber 函数，根据某个优先级调度 performSyncWorkOnRoot 进入 beginWork 里
+4. 动态赋值 hook 为 updateHooks
+5. 把 hook 的 pendingQueue 添加到 baseQueue 尾部，并且把 queue.pending 赋值给 baseQueue
+6. 遍历 baseQueue 拿到新的 state
+7. 赋值给 hook.memoizedState 并返回出去
 
 
 
