@@ -129,3 +129,174 @@ function updateState<S>(
 
 在 updateState 时给 updateReducer 传入了两个参数，分别是 queue 对象上的 basicStateReducer 和 useState 的默认值。
 
+## updateReducer
+
+updateReducer 会先声明一块新的地址 newHook 然后从 current Fiber 的 memoizedState 链表上拿到对应的 hook，然后将 newHook 赋值给全局的 workInProgressHook 同样也是以链表的方式存储在当前 workInProgress.memoizedState 上。
+
+```js
+// updateReducer
+// 获取对应的 hook
+const hook = updateWorkInProgressHook()
+
+// updateWorkInProgressHook
+// 从 current Fiber 上拿到对应的 Hook
+  let nextCurrentHook: null | Hook;
+  if (currentHook === null) {
+    const current = currentlyRenderingFiber.alternate;
+    if (current !== null) {
+      nextCurrentHook = current.memoizedState;
+    } else {
+      nextCurrentHook = null;
+    }
+  } else {
+    nextCurrentHook = currentHook.next;
+  }
+
+currentHook = nextCurrentHook;
+
+// 开辟一片新的地址
+const newHook: Hook = {
+      memoizedState: currentHook.memoizedState,
+
+      baseState: currentHook.baseState,
+      baseQueue: currentHook.baseQueue,
+      queue: currentHook.queue,
+
+      next: null,
+    };
+
+// 以链表的形式存储到当前 workInProgress.memoizedState 上
+    if (workInProgressHook === null) {
+      // This is the first hook in the list.
+      currentlyRenderingFiber.memoizedState = workInProgressHook = newHook;
+    } else {
+      // Append to the end of the list.
+      workInProgressHook = workInProgressHook.next = newHook;
+    }
+return workInProgressHook
+```
+
+然后和 class Component 一样，获取到 hook 上的 pendingQueue 链表和 baseQueue。如果 pendingQueue 存在的话，就将 pendingQueue 添加到 baseQueue 链表的尾部。之后将 pendingQueue 清空.
+
+```js
+// updateReducer
+const queue = hook.queue
+const current: Hook = (currentHook: any);
+let baseQueue = current.baseQueue;
+  const pendingQueue = queue.pending;
+
+  if (pendingQueue !== null) {
+	
+    if (baseQueue !== null) {
+      // 把 pendingQueue 插入到 baseQueue 尾部
+      const baseFirst = baseQueue.next;
+      const pendingFirst = pendingQueue.next;
+      baseQueue.next = pendingFirst;
+      pendingQueue.next = baseFirst;
+    }
+    current.baseQueue = baseQueue = pendingQueue;
+    queue.pending = null;
+  }
+```
+
+关于 pendingQueue 和 baseQueue 的操作：
+
+之前在 dispatchAction 里会创建一个 update 的对象，接着会讲这个 update 插入到 queue.pending 中，当 pending == null 时他自己会和自己形成一条环状链表
+
+```js
+queue.pending:   u1 ─────┐ 
+                  ^      |                                    
+                  └──────┘
+```
+
+插入 u2 之后，pendingQueeu 就会变成这样
+
+```js
+queue.pending = update; // u2
+u2.next = u1
+u1.next = u2
+queue.pending:   u2 ──> u1
+                  ^      |                                    
+                  └──────┘
+```
+
+在 updateReducer 里当 baseQueue == null 时，baseQueue 会直接等于 queue.pending
+
+```js
+current.baseQueue: u2 ——> u1
+										^      |
+  									└──────┘
+queue.pending = null
+```
+
+当有新的 pendingQueue 进来以后 baseQueue 就变成了这样
+
+```js
+queue.pending:   u4 ──> u3
+                  ^      |                                    
+                  └──────┘
+
+// 首先拿到两条链表的头部
+const baseFirst = baseQueue.next // u1
+const pendingFirst = pendingQueue.next //u3
+// 把 baseQueue 链表尾部的 next 指向 pendingQueue 链表头部，
+// 就形成了这样一条链表 u1 -> u2 -> u3 -> u4 -> u3
+baseQueue.next = pendingFirst //u2.next = u3
+// 接着把 pendingQueue 链表尾部的 next 指向 baseQueue 链表的头部
+// 就形成了这样一条链表 u4 -> u1 -> u2 -> u3 -> u4
+pendingQueue.next = baseFirst
+current.baseQueue = baseQueue = pendingQueue;
+
+current.baseQueue = queue.pending:   u4 ──> u1 ──> u2 ──> u3
+                                      ^      							|                                    
+                                      └───────────────────┘
+```
+
+然后遍历 baseQueue 链表，通过传进来的 basicStateReducer (reducer 参数) 和 update.eagerReducer 进行判断是否相等，然后拿到新的 state
+
+```js
+if (baseQueue !== null) {
+  const first = baseQueue.next;
+    let newState = current.baseState;
+
+    let newBaseState = null;
+    let newBaseQueueFirst = null;
+    let newBaseQueueLast = null;
+    let update = first;
+  
+  do {
+    if (update.eagerReducer === reducer) {
+          newState = ((update.eagerState: any): S);
+        } else {
+          // 可能是 useReducer 的逻辑？后面具体看看
+          const action = update.action;
+          newState = reducer(newState, action);
+        }
+    update = update.next;
+  } while (update !== null && update !== first);
+}
+```
+
+拿到了 newState 后将它赋值给 hook.memoizedState 最后把新的 state return 出去。
+
+```js
+ hook.memoizedState = newState;
+    hook.baseState = newBaseState;
+    hook.baseQueue = newBaseQueueLast;
+
+    queue.lastRenderedState = newState;
+
+  const dispatch: Dispatch<A> = (queue.dispatch: any);
+  return [hook.memoizedState, dispatch];
+```
+
+这样 function component 里拿到的就是更新后的 Hook 了。hook 改变后，返回了新的 react element，再往后就是 react 的 render 阶段和 commit 阶段了，最后在 commit 阶段里完成页面的更新. 
+
+
+
+
+
+
+
+
+
