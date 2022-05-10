@@ -99,5 +99,86 @@ function createFunctionComponentUpdateQueue(): FunctionComponentUpdateQueue {
 
 ## 执行 useEffect callback
 
+在 React 的 commit 阶段里，执行 commitBeforeMutationEffects 的时候会通过 scheduleCallback 调度 flushPassiveEffects，在 flushPassiveEffects 里会执行 `runWithPriority(priorityLevel, flushPassiveEffectsImpl);` 以某一个优先级来执行 flushPassiveEffectsImpl 
+
+```js
+// packages/react-reconciler/src/ReactFiberWorkLoop.old.js
+
+function commitBeforeMutationEffects() {
+  while (nextEffect !== null) {
+    // ... 省略代码
+    if ((flags & Passive) !== NoFlags) {
+      // If there are passive effects, schedule a callback to flush at
+      // the earliest opportunity.
+      if (!rootDoesHavePassiveEffects) {
+        rootDoesHavePassiveEffects = true;
+        scheduleCallback(NormalSchedulerPriority, () => {
+          flushPassiveEffects();
+          return null;
+        });
+      }
+    }
+    nextEffect = nextEffect.nextEffect;
+  }
+}
+
+export function flushPassiveEffects(): boolean {
+
+  // ...省略了好多代码
+  return runWithPriority(priorityLevel, flushPassiveEffectsImpl);
+
+}
+```
+
+### 关于 scheduleCallback
+
+scheduleCallback 是调度器 scheduler 提供的方法，用于以某一个优先级调度一个回调函数，我们可以简单理解为这部分代码会以异步执行 `flushPassiveEffects()` 关于 scheduler 的原理后面继续了解吧。。
+
+### flushPassiveEffectsImpl
+
+pendingPassiveHookEffectsUnmount 是一个全局的数组，里面存储了所有的 useEffect 他的存储方法是这样的 `[useEffect1, 对应的Fiber1, useEffect2, 对应的Fiber2]` 。
+
+声明一个常量 unmountEffects 拿到所有 Effects 的时候会先遍历这个数组，然后判断 effect.distory 是不是 function ，去执行 useEffect return 的函数。
+
+```js
+const unmountEffects = pendingPassiveHookEffectsUnmount;
+  pendingPassiveHookEffectsUnmount = [];
+for (let i = 0; i < unmountEffects.length; i += 2) {
+  const effect = ((unmountEffects[i]: any): HookEffect);
+    const fiber = ((unmountEffects[i + 1]: any): Fiber);
+    const destroy = effect.destroy;
+    effect.destroy = undefined;
+  if (typeof destroy === 'function') {
+    // 里面省略代码，反正就是执行 destory
+    invokeGuardedCallback(null, destroy, null);
+  }
+}
+```
+
+然后同样是去 pendingPassiveHookEffectsUnmount 拿到所有的 Effects，接着遍历这个数组。然后通过 invokeGuardedCallback 调度 invokePassiveEffectCreate ，最终是在 invokePassiveEffectCreate 里执行的 useEffect 的 callback，把 callback 的返回值赋值给 effect.destory 
+
+```js
+const mountEffects = pendingPassiveHookEffectsMount;
+  pendingPassiveHookEffectsMount = [];
+ for (let i = 0; i < mountEffects.length; i += 2) {
+    const effect = ((mountEffects[i]: any): HookEffect);
+    const fiber = ((mountEffects[i + 1]: any): Fiber);
+   
+   // ... 省略好多代码
+   invokeGuardedCallback(null, invokePassiveEffectCreate, null, effect);
+ }
+
+function invokePassiveEffectCreate(effect: HookEffect): void {
+  const create = effect.create;
+  effect.destroy = create();
+}
+```
+
+
+
+
+
+
+
 
 
