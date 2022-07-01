@@ -62,11 +62,11 @@ updateContainer 的参数分别是：ReactElement（JSX），创建好的 FiberR
 
 在 updateContainer 里主要做了以下事情：
 
-1. `const current = rootFiber(FiberRootNode.current)` React 的 FiberRootNode 使用 current 属性指向 rootFiber，也就是 render App 的根 fiber 节点
+1. `const current = rootFiber(也就是 FiberRootNode.current)` React 的 FiberRootNode 使用 current 属性指向 rootFiber，也就是 render App 的根 fiber 节点
 2. `const eventTime = requestEventTime()` 声明了开始时间，用于在 scheduler 里做任务的优先级处理
 3. `const update = createUpdate(eventTime, lane)` 创建 update 对象用于 React 的状态更新
 4. `update.payload = {element}` 把传入的 JSX 赋值给 update.payload, 后面也是用于更新
-5. `enqueueUpdate(current, update)` 初次 render 的时候让创建的 update 和自己形成环状链表, 把 update 赋值到 current.updateQueue.shared
+5. `enqueueUpdate(current, update)` 初次 render 的时候让创建的 update 和自己形成环状链表, 把 update 赋值到 current.updateQueue.shared.pending 上
 6. `scheduleUpdateOnFiber(current, lane, eventTime);` 执行下一步操作
 
 ```js
@@ -165,6 +165,8 @@ function performSyncWorkOnRoot(root) {
 
 在上面的函数调用栈的截图中可以看到 renderRootSync 里调用了 workLoopSync 方法，但是在这个方法之前还有一个比较重要的流程是 React 第一次渲染的时候 renderRootSync 会判断 workInProgressRoot !== root 然后调用     prepareFreshStack  方法根据 rootFiber 上的值创建 workInProgress Fiber 然后赋值给全局的 workInProgress, 并把他们通过 alternate 属性相互关联起来。然后再执行 workLoopSync。在 workLoopSync 里面循环判断 wokInProgress !== null 调用 performUnitOfWork(workInProgress) 函数。而 performUnitOfWork 里会吧 workInProgress = workInProgress.next 。直到 next == null 的时候跳出循环。
 
+在下一节中，我们仔细看看 beginWork 做了什么
+
 ```js
 // react-reconciler/src/ReactFiberWorkLoop.old.js
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
@@ -172,7 +174,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
     // createWorkInProgress
     // 创建 fiber 赋值给 workInProgress， 把 current 上的属性也赋值给 workInProgress
-    // workInProgress.alternate = current; current.alternate = workInProgress; 通过 alternate 把 workInProgress 和 current 相互关联起来
+    // 复制 rootFiber 创建双缓存树的 workInProgress 
     prepareFreshStack(root, lanes);
     startWorkOnPendingInteractions(root, lanes);
   }
